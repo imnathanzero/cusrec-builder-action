@@ -14,21 +14,6 @@ inputs:
     description: 'Manifest Branch'
     type: string
     default: '12.1'
-  USER_NAME:
-    description: 'Your GitHub username'
-    type: string
-  USER_EMAIL:
-    description: 'Your GitHub email'
-    type: string
-  KERNEL_TREE:
-    description: 'Your device kernel tree'
-    type: string
-  KERNEL_BRANCH:
-    description: 'Kernel tree branch'
-    type: string
-  KERNEL_PATH:
-    description: 'Path to kernel directory'
-    type: string
   DEVICE_TREE:
     description: 'Device tree repository'
     type: string
@@ -44,18 +29,6 @@ inputs:
   BUILD_TARGET:
     description: 'Specify Your Build Target [boot,recovery,vendorboot]'
     type: string
-  COMMON_TREE:
-    description: 'Your device common tree (if exists)'
-    type: string
-  COMMON_BRANCH:
-    description: 'Your device common tree branch'
-    type: string
-  COMMON_PATH:
-    description: 'Path to your common device tree'
-    type: string
-  MAINTAINER_URL:
-    description: 'Image size must be 192x192'
-    type: string
   TG_CHAT_ID:
     description: 'Telegram Chat ID'
     type: string
@@ -70,7 +43,6 @@ inputs:
 runs:
   using: 'composite'
   steps:
-
     - name: Cleanup
       uses: mehyaa/slimhub_actions@fix/toolset-url
 
@@ -101,8 +73,8 @@ runs:
       run: |
         mkdir -p ${GITHUB_ACTION_PATH}/OrangeFox
         cd ${GITHUB_ACTION_PATH}/OrangeFox
-        git config --global user.name "${{ inputs.USER_NAME }}"
-        git config --global user.email "${{ inputs.USER_EMAIL }}"
+        git config --global user.name "${{ github.actor }}"
+        git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
 
         git clone --depth=1 https://gitlab.com/OrangeFox/sync.git
         cd sync
@@ -112,56 +84,14 @@ runs:
         cd -
 
         cd ${GITHUB_ACTION_PATH}/OrangeFox/fox_${{ inputs.FOX_SYNC_BRANCH }}
-        if [[ ! -d bootable/recovery/gui/theme ]]; then
-            git clone --depth=1 \
-            https://gitlab.com/OrangeFox/misc/theme.git \
-            bootable/recovery/gui/theme
-        fi
-        if [[ ! -d external/nano ]]; then
-            git clone --depth=1 \
-            https://github.com/LineageOS/android_external_nano \
-            -b lineage-19.1 \
-            external/nano
-        fi
-        if [[ ! -d external/libncurses ]]; then
-            git clone --depth=1 \
-            https://github.com/LineageOS/android_external_libncurses \
-            -b lineage-19.1 \
-            external/libncurses
-        fi
-        if [[ ! -d external/bash ]]; then
-            git clone --depth=1 \
-            https://github.com/LineageOS/android_external_bash \
-            -b lineage-19.1 \
-            external/bash
-        fi
-        if [[ ! -d external/lptools ]]; then
-            git clone --depth=1 \
-            https://github.com/phhusson/vendor_lptools \
-            external/lptools
-        fi
-        if [[ -n "${{ inputs.MAINTAINER_URL }}" ]]; then
-            wget -q ${{ inputs.MAINTAINER_URL }} -O ${GITHUB_ACTION_PATH}/maintainer.png
-            cp -r ${GITHUB_ACTION_PATH}/maintainer.png bootable/recovery/gui/theme/portrait_hdpi/images/Default/About
-        fi
-        if [[ -n "${{ inputs.KERNEL_TREE }}" ]]; then
-            git clone --depth=1 \
-            ${{ inputs.KERNEL_TREE }} \
-            -b ${{ inputs.KERNEL_BRANCH }} \
-            ${{ inputs.KERNEL_PATH }}
-        fi
-        if [[ -n "${{ inputs.COMMON_TREE }}" ]]; then
-            git clone --depth=1 \
-            ${{ inputs.COMMON_TREE }} \
-            -b ${{ inputs.COMMON_BRANCH }} \
-            ${{ inputs.COMMON_PATH }}
-        fi
-        if [[ -n "${{ inputs.DEVICE_TREE }}" ]]; then
-            git clone --depth=1 \
+        git clone --depth=1 \
             ${{ inputs.DEVICE_TREE }} \
             -b ${{ inputs.DEVICE_TREE_BRANCH }} \
             ${{ inputs.DEVICE_PATH }}
-        fi
+        
+        cd ${{ inputs.DEVICE_PATH }}
+        echo "DT_BRANCH=$(git branch --show-current)" >>$GITHUB_ENV
+        cd -
 
     - name: 🦊 Build OrangeFox Recovery
       shell: bash
@@ -189,18 +119,14 @@ runs:
         lunch twrp_$CODENAME-eng
         sleep 5
         build_message "Building... 🛠️"
-        mka adbd ${BUILD_TARGET}image -j$(nproc --all) 2>&1 | tee -a ${BUILDLOG}
+        mka ${BUILD_TARGET}image -j$(nproc --all) 2>&1 | tee -a ${BUILDLOG}
         export retVal=${PIPESTATUS[0]}
         timeEnd
         buildStatus
 
-        export ORF_IMG_SHA1=$(sha1sum $OUT/OrangeFox*.img | cut -d ' ' -f1)
-        export ORF_ZIP_SHA1=$(sha1sum $OUT/OrangeFox*.zip | cut -d ' ' -f1)
-        export ORF_ZIP_NAME=$(basename $OUT/OrangeFox*.zip)
-        export ORF_IMG_NAME=$(basename $OUT/OrangeFox*.img)
         export ORF_GHREPO="https://github.com/${{ github.repository }}"
         export ORF_LINK="${ORF_GHREPO}/releases/tag/${BUILD_DATE}"
-
+        
         sleep 2
         ORF_FILES=$(echo $OUT/{OrangeFox*.zip,OrangeFox*.img})
         create_release_notes
