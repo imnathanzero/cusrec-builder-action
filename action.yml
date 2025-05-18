@@ -44,7 +44,7 @@ runs:
   using: 'composite'
   steps:
     - name: Cleanup
-      uses: mehyaa/slimhub_actions@fix/toolset-url
+      uses: rokibhasansagar/slimhub_actions@main
 
     - name: Set swap space
       uses: pierotofy/set-swap-space@master
@@ -80,10 +80,10 @@ runs:
         cd sync
         ./orangefox_sync.sh \
         --branch ${{ inputs.FOX_SYNC_BRANCH }} \
-        --path ${GITHUB_ACTION_PATH}/OrangeFox/fox_${{ inputs.FOX_SYNC_BRANCH }}
+        --path ${GITHUB_ACTION_PATH}/OrangeFox
         cd -
 
-        cd ${GITHUB_ACTION_PATH}/OrangeFox/fox_${{ inputs.FOX_SYNC_BRANCH }}
+        cd ${GITHUB_ACTION_PATH}/OrangeFox
         git clone --depth=1 \
             ${{ inputs.DEVICE_TREE }} \
             -b ${{ inputs.DEVICE_TREE_BRANCH }} \
@@ -99,43 +99,40 @@ runs:
         TG_CHAT_ID: ${{ inputs.TG_CHAT_ID }}
         TG_TOKEN: ${{ inputs.TG_TOKEN }}
         FOX_BRANCH: ${{ inputs.FOX_SYNC_BRANCH }}
-        CODENAME: ${{ inputs.DEVICE_NAME }}
+        DT_BRANCH: ${{ env.DT_BRANCH }}
+        DEVICE_NAME: ${{ inputs.DEVICE_NAME }}
         DEVICE_PATH: ${{ inputs.DEVICE_PATH }}
         BUILD_TARGET: ${{ inputs.BUILD_TARGET }}
+        ORF_GHREPO: "https://github.com/${{ github.repository }}"
         GITHUB_ACTION_PATH: ${{ github.action_path }}
       run: |
         source functions.sh
         timeStart
 
-        cd ${GITHUB_ACTION_PATH}/OrangeFox/fox_${FOX_BRANCH}
+        cd ${GITHUB_ACTION_PATH}/OrangeFox
+        export BUILDLOG="$(pwd)/build.log"
+        export OUT="$(pwd)/out/target/product/$DEVICE_NAME"
         set +e
         source build/envsetup.sh
-        set -e
 
-        export BUILDLOG=$(realpath ./build.log)
-        export OUT=$(realpath ./out/target/product/$CODENAME)
-        export DEVICE=$(grep "PRODUCT_MODEL :=" ./$DEVICE_PATH/twrp_$CODENAME.mk -m 1 | cut -d = -f 2)
-
-        lunch twrp_$CODENAME-eng
-        sleep 5
+        lunch twrp_${DEVICE_NAME}-eng
         build_message "Building... 🛠️"
         mka ${BUILD_TARGET}image -j$(nproc --all) 2>&1 | tee -a ${BUILDLOG}
         export retVal=${PIPESTATUS[0]}
         timeEnd
         buildStatus
 
-        export ORF_GHREPO="https://github.com/${{ github.repository }}"
         export ORF_LINK="${ORF_GHREPO}/releases/tag/${BUILD_DATE}"
         
         sleep 2
-        ORF_FILES=$(echo $OUT/{OrangeFox*.zip,OrangeFox*.img})
+        export ORF_FILES=$(echo $OUT/{OrangeFox*.zip,OrangeFox*.img})
         create_release_notes
         gh release create \
             "$BUILD_DATE" \
             $ORF_FILES \
-            --title "🦊 OFRP for ${DEVICE} (${CODENAME}) // ${BUILD_DATE}" \
+            --title "🦊 OFRP for ${DEVICE_NAME} // ${BUILD_DATE}" \
             -F "${GITHUB_ACTION_PATH}/release-notes.md" \
             -R "${{ github.repository }}"
         sleep 1
-        build_success_msg
+        build_success_message
 

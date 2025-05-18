@@ -81,7 +81,7 @@ build_message() {
         CI_MESSAGE_ID=$(
             tg_send_message --chat_id "$TG_CHAT_ID" --parse_mode "markdown" --text "*=== 🦊 OFRP Builder ===*
 *🦊 Fox Branch :* ${FOX_BRANCH}
-*📱 Device :* ${DEVICE} (${CODENAME})
+*📱 Device :* ${DEVICE_NAME}
 *🔌 DT Branch*: ${DT_BRANCH}
 *📅 Date :* $DATE
 
@@ -90,7 +90,7 @@ build_message() {
     else
         tg_edit_message_text --chat_id "$TG_CHAT_ID" --message_id "$CI_MESSAGE_ID" --parse_mode "markdown" --text "*=== 🦊 OFRP Builder ===*
 *🦊 Fox Branch :* ${FOX_BRANCH}
-*📱 Device :* ${DEVICE} (${CODENAME})
+*📱 Device :* ${DEVICE_NAME}
 *🔌 DT Branch*: ${DT_BRANCH}
 *📅 Date :* $DATE
 
@@ -98,8 +98,12 @@ build_message() {
     fi
 }
 
-build_success_msg() {
-    tg_send_message --chat_id "$TG_CHAT_ID" --parse_mode "markdown" --reply_to_message_id "$CI_MESSAGE_ID" --text "✅ OFRP Build Succeeded
+build_success_message() {
+    tg_send_message --chat_id "$TG_CHAT_ID" \
+        --parse_mode "markdown" \
+        --reply_to_message_id "$CI_MESSAGE_ID" \
+        --disable_web_page_preview "true" \
+        --text "✅ OFRP Build Succeeded
 📦 Download: [here](${ORF_LINK})"
 }
 
@@ -114,9 +118,9 @@ buildStatus() {
 }
 
 create_release_notes() {
-    echo "## OFRP Build - Unofficial
+    echo "### OFRP Build - Unofficial
 🦊 Fox Branch: ${FOX_BRANCH}
-📱 Device: ${DEVICE} (${CODENAME})
 🔌 DT Branch: ${DT_BRANCH}
+📱 Device: ${DEVICE_NAME}
 📅 Build Date: ${BUILD_DATE}" >${GITHUB_ACTION_PATH}/release-notes.md
 }
