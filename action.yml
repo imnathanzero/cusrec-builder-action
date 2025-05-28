@@ -97,12 +97,13 @@ runs:
         DEVICE_NAME: ${{ inputs.DEVICE_NAME }}
         DEVICE_PATH: ${{ inputs.DEVICE_PATH }}
         BUILD_TARGET: ${{ inputs.BUILD_TARGET }}
-        ORF_GHREPO: "https://github.com/${{ github.repository }}"
+        TWRP_GHREPO: "https://github.com/${{ github.repository }}"
         GITHUB_ACTION_PATH: ${{ github.action_path }}
       run: |
         source functions.sh
         timeStart
-
+        
+        cd ${GITHUB_ACTION_PATH}/TWRP
         export BUILDLOG="$(pwd)/build.log"
         export OUT="$(pwd)/out/target/product/$DEVICE_NAME"
         set +e
