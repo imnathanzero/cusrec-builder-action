@@ -1,16 +1,16 @@
 # Copyright (c) https://github.com/UWU-TEAM 2025-present
 # Copyright (c) https://github.com/linastorvaldz 2025-present
 
-name: "🦊 Orangefox Recovery Builder"
-description: "Build OrangeFox Recovery with Github Action"
-author: "linastorvaldz"
+name: "TWRP Recovery Builder"
+description: "Build TWRP Recovery with Github Action"
+author: "imnathanzero"
 
 branding:
   icon: 'terminal'
   color: 'yellow'
 
 inputs:
-  FOX_SYNC_BRANCH:
+  TWRP_SYNC_BRANCH:
     description: 'Manifest Branch'
     type: string
     default: '12.1'
@@ -38,7 +38,7 @@ inputs:
   TIMEZONE:
     description: 'Specify Your Timezone'
     type: string
-    default: 'Asia/Makassar'
+    default: 'Asia/Jakarta'
 
 runs:
   using: 'composite'
@@ -66,24 +66,18 @@ runs:
         sleep 1
         sudo timedatectl set-timezone "${{ inputs.TIMEZONE }}"
 
-    - name: Sync OrangeFox Manifest
+    - name: Sync TWRP Manifest
       shell: bash
       env:
         GITHUB_ACTION_PATH: ${{ github.action_path }}
       run: |
-        mkdir -p ${GITHUB_ACTION_PATH}/OrangeFox
-        cd ${GITHUB_ACTION_PATH}/OrangeFox
+        mkdir -p ${GITHUB_ACTION_PATH}/TWRP
+        cd ${GITHUB_ACTION_PATH}/TWRP
         git config --global user.name "${{ github.actor }}"
         git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
 
-        git clone --depth=1 https://gitlab.com/OrangeFox/sync.git
-        cd sync
-        ./orangefox_sync.sh \
-        --branch ${{ inputs.FOX_SYNC_BRANCH }} \
-        --path ${GITHUB_ACTION_PATH}/OrangeFox
-        cd -
-
-        cd ${GITHUB_ACTION_PATH}/OrangeFox
+        repo init -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git -b twrp-${{ inputs.TWRP_SYNC_BRANCH }} && \
+        repo sync && \
         git clone --depth=1 \
             ${{ inputs.DEVICE_TREE }} \
             -b ${{ inputs.DEVICE_TREE_BRANCH }} \
@@ -93,12 +87,12 @@ runs:
         echo "DT_BRANCH=$(git branch --show-current)" >>$GITHUB_ENV
         cd -
 
-    - name: 🦊 Build OrangeFox Recovery
+    - name: Build TWRP Recovery
       shell: bash
       env:
         TG_CHAT_ID: ${{ inputs.TG_CHAT_ID }}
         TG_TOKEN: ${{ inputs.TG_TOKEN }}
-        FOX_BRANCH: ${{ inputs.FOX_SYNC_BRANCH }}
+        TWRP_BRANCH: ${{ inputs.TWRP_SYNC_BRANCH }}
         DT_BRANCH: ${{ env.DT_BRANCH }}
         DEVICE_NAME: ${{ inputs.DEVICE_NAME }}
         DEVICE_PATH: ${{ inputs.DEVICE_PATH }}
@@ -109,7 +103,6 @@ runs:
         source functions.sh
         timeStart
 
-        cd ${GITHUB_ACTION_PATH}/OrangeFox
         export BUILDLOG="$(pwd)/build.log"
         export OUT="$(pwd)/out/target/product/$DEVICE_NAME"
         set +e
@@ -122,15 +115,15 @@ runs:
         timeEnd
         buildStatus
 
-        export ORF_LINK="${ORF_GHREPO}/releases/tag/${BUILD_DATE}"
+        export TWRP_LINK="${TWRP_GHREPO}/releases/tag/${BUILD_DATE}"
         
         sleep 2
-        export ORF_FILES=$(echo $OUT/{OrangeFox*.zip,OrangeFox*.img})
+        export TWRP_FILES=$(echo $OUT/{vendor_boot.img})
         create_release_notes
         gh release create \
             "$BUILD_DATE" \
             $ORF_FILES \
-            --title "🦊 OFRP for ${DEVICE_NAME} // ${BUILD_DATE}" \
+            --title "TWRP for ${DEVICE_NAME} // ${BUILD_DATE}" \
             -F "${GITHUB_ACTION_PATH}/release-notes.md" \
             -R "${{ github.repository }}"
         sleep 1

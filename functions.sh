@@ -79,8 +79,8 @@ tg_send_photo() {
 build_message() {
     if [[ -z $CI_MESSAGE_ID ]]; then
         CI_MESSAGE_ID=$(
-            tg_send_message --chat_id "$TG_CHAT_ID" --parse_mode "markdown" --text "*=== 🦊 OFRP Builder ===*
-*🦊 Fox Branch :* ${FOX_BRANCH}
+            tg_send_message --chat_id "$TG_CHAT_ID" --parse_mode "markdown" --text "*=== TWRP Builder ===*
+*🛠️ TWRP Branch :* ${TWRP_BRANCH}
 *📱 Device :* ${DEVICE_NAME}
 *🔌 DT Branch*: ${DT_BRANCH}
 *📅 Date :* $DATE
@@ -88,8 +88,8 @@ build_message() {
 *⚙️ Status :* ${1}" | jq -r .result.message_id
         )
     else
-        tg_edit_message_text --chat_id "$TG_CHAT_ID" --message_id "$CI_MESSAGE_ID" --parse_mode "markdown" --text "*=== 🦊 OFRP Builder ===*
-*🦊 Fox Branch :* ${FOX_BRANCH}
+        tg_edit_message_text --chat_id "$TG_CHAT_ID" --message_id "$CI_MESSAGE_ID" --parse_mode "markdown" --text "*=== TWRP Builder ===*
+*🛠️ TWRP Branch :* ${TWRP_BRANCH}
 *📱 Device :* ${DEVICE_NAME}
 *🔌 DT Branch*: ${DT_BRANCH}
 *📅 Date :* $DATE
@@ -103,8 +103,8 @@ build_success_message() {
         --parse_mode "markdown" \
         --reply_to_message_id "$CI_MESSAGE_ID" \
         --disable_web_page_preview "true" \
-        --text "✅ OFRP Build Succeeded
-📦 Download: [here](${ORF_LINK})"
+        --text "✅ TWRP Build Succeeded
+📦 Download: [here](${TWRP_LINK})"
 }
 
 buildStatus() {
@@ -118,8 +118,8 @@ buildStatus() {
 }
 
 create_release_notes() {
-    echo "### OFRP Build - Unofficial
-🦊 Fox Branch: ${FOX_BRANCH}
+    echo "### TWRP Build - Unofficial
+🛠️ TWRP Branch: ${TWRP_BRANCH}
 🔌 DT Branch: ${DT_BRANCH}
 📱 Device: ${DEVICE_NAME}
 📅 Build Date: ${BUILD_DATE}" >${GITHUB_ACTION_PATH}/release-notes.md
